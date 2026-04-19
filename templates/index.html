@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>JB Études - Prédiction Risque d'Abandon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #ddd430 0%, #2a5298 50%, #00b4db 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* CONTAINER PLUS LARGE */
+        .container {
+            max-width: 1200px;  /* Changé: 600px → 1200px */
+            width: 95%;         /* Largeur relative */
+            margin: 0 auto;
+            background: white;
+            padding: 40px;      /* Plus de padding */
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(155, 107, 29, 0.2);
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* GRAND TITRE - plus grand */
+        .main-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .main-title h1 {
+            font-size: 3em;     /* Plus grand */
+            color: #0e5ae6;
+            margin-bottom: 10px;
+        }
+        .main-title p {
+            font-size: 1.2em;   /* Plus grand */
+            color: #666;
+        }
+
+        /* GRANDE PHOTO - plus grande */
+        .hero-image {
+            width: 100%;
+            margin: 30px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(83, 166, 28, 0.1);
+        }
+        .hero-image img {
+            width: 100%;
+            height: auto;
+            max-height: 400px;   /* Hauteur max */
+            object-fit: cover;   /* Couvre bien l'espace */
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .hero-image img:hover {
+            transform: scale(1.02);
+        }
+
+        /* EXPLICATION - plus large */
+        .explanation {
+            background: #e8f0fe;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border-left: 5px solid #1e3c72;
+        }
+        .explanation h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        .explanation p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+        .explanation ul {
+            margin-left: 25px;
+            color: #555;
+        }
+        .explanation li {
+            margin: 8px 0;
+        }
+
+        /* FORMULAIRE - disposition en grille pour plus de largeur */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .form-full-width {
+            grid-column: span 2;
+        }
+
+        h1 { 
+            text-align: center; 
+            color: #1e3c72; 
+            margin: 30px 0 20px;
+            font-size: 1.8em;
+        }
+
+        label { 
+            display: block; 
+            margin-top: 10px; 
+            font-weight: bold; 
+            color: #1e3c72; 
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            font-size: 15px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00b4db;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 30px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover { 
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .high-risk { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+        .low-risk { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+        .error { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+        
+        .advice-message {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .advice-message strong {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .advice-message ul {
+            margin-left: 20px;
+        }
+        .advice-message li {
+            margin: 8px 0;
+        }
+
+        /* RESPONSIVE - s'adapte aux petits écrans */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                width: 100%;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .form-full-width {
+                grid-column: span 1;
+            }
+            .main-title h1 {
+                font-size: 1.8em;
+            }
+            .main-title p {
+                font-size: 1em;
+            }
+            .explanation h3 {
+                font-size: 1.2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            .main-title h1 {
+                font-size: 1.4em;
+            }
+            button {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+         <!-- GRAND TITRE -->
+    <div class="main-title">
+        <h1>🎓 Bienvenue sur JB Academic Success🎓</h1>
+        
+        <div class="profile-image" style="text-align: center; margin: 10px 0;">
+    <img src="static/jb.jpeg" alt="JB Academic Success" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+</div>
+        
+        <p>L'intelligence artificielle au service de la réussite étudiante</p>
+    </div>
+
+      <!-- La vidéo avec contrôles -->
+<div style="position: relative;">
+    <video id="jbVideo" autoplay muted loop playsinline style="width: 100%; max-height: 550px; border-radius: 14px; object-fit: cover;">
+        <source src="static/ufhb.mp4" type="video/mp4">
+    </video>
+    
+    <div style="position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between;">
+        <!-- Bouton Play/Pause -->
+        <button id="playPauseBtn" style="background: rgba(165, 16, 16, 0.6); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px;">
+            ⏸️
+        </button>
+        
+        <!-- Bouton Son -->
+        <button id="soundBtn" style="background: rgba(183, 19, 19, 0.6); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px;">
+            🔇
+        </button>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('jbVideo');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    
+    let sonActive = false;
+    let videoPlay = true;
+    
+    // Bouton Play/Pause
+    playPauseBtn.addEventListener('click', function() {
+        if (videoPlay) {
+            video.pause();
+            playPauseBtn.textContent = '▶️';
+            videoPlay = false;
+        } else {
+            video.play();
+            playPauseBtn.textContent = '⏸️';
+            videoPlay = true;
+        }
+    });
+    
+    // Bouton Son
+    soundBtn.addEventListener('click', function() {
+        sonActive = !sonActive;
+        video.muted = !sonActive;
+        if(sonActive) video.volume = 0.5;
+        soundBtn.textContent = sonActive ? '🔊' : '🔇';
+    });
+</script>
+
+        <!-- EXPLICATION DE L'APPLI -->
+        <div class="explanation">
+            <h3>📖 Comment ça fonctionne ?</h3>
+            <p>Notre modèle d'intelligence artificielle analyse vos données académiques pour évaluer le risque d'abandon scolaire. </p>
+            <p><strong>🔍 Pourquoi c'est utile ?</strong></p>
+            <ul>
+                <li>Identifier les étudiants à risque avant qu'il ne soit trop tard</li>
+                <li>Mettre en place des mesures de soutien personnalisées</li>
+                <li>Améliorer la réussite académique globale</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>⚡ Modèle fiable à 98.3%</strong>-basé sur des données académiques et comportementales </p>
+        </div>
+
+        <h1>📋 Prédiction du Risque d'Abandon</h1>
+        <p>Remplissez simplement le formulaire ci-dessous et obtenez une prédiction de votre Risque d'Abandon.</p>
+        <form id="predictionForm">
+            <!-- Formulaire en grille 2 colonnes pour gagner de la place -->
+            <div class="form-grid">
+                <div>
+                    <label>Âge :</label>
+                    <input type="number" id="age" min="15" max="24" step="1" required>
+                    <div class="hint">sélectionnez entre : 15 - 24 ans</div>
+                </div>
+                
+                <div>
+                    <label>Genre :</label>
+                    <select id="gender">
+                        <option value="Male"> Homme</option>
+                        <option value="Female">Femme</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label>Moyenne générale (/20) :</label>
+                    <input type="number" id="average_grade" min="5" max="18" step="0.1" required>
+                    <div class="hint">sélectionnez entre : 5.03 - 17.96</div>
+                </div>
+                
+                <div>
+                    <label>Taux d'absentéisme aux cours(%) :</label>
+                    <input type="number" id="absenteeism_rate" min="0" max="50" step="1" required>
+                    <div class="hint">sélectionnez entre :  0% - 50%</div>
+                </div>
+                
+                <div>
+                    <label>Accès Internet :</label>
+                    <select id="internet_access">
+                        <option value="Yes">✅ Oui</option>
+                        <option value="No">❌ Non</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label>Heures d'étude par jour :</label>
+                    <input type="number" id="study_time_hours" min="0" max="5" step="0.5" required>
+                    <div class="hint">⏰ 0 - 5 heures par jour</div>
+                </div>
+                
+                <div class="form-full-width">
+                    <label>Activités extrascolaires :</label>
+                    <select id="extra_activities">
+                        <option value="Yes">✅ Oui</option>
+                        <option value="No">❌ Non</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit">🔮 Cliquez pour prédire le Risque</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Fonction pour générer des conseils personnalisés
+        function getAdvice(data, prediction, confidence) {
+            let advice = "";
+            let warnings = [];
+            
+
+            // Analyse des notes
+            if (data.average_grade >= 0 && data.average_grade < 5) {
+                warnings.push(" Danger grave : moyenne extrêmement faible (0–5/20)");
+            } else if (data.average_grade < 10) {
+                warnings.push(" Moyenne très faible (<10/20) → risque académique élevé");
+            } else if (data.average_grade < 12) {
+            warnings.push(" Moyenne à surveiller (10–12/20) → peut être améliorée");
+            }
+            // Analyse de l'absentéisme
+            if (data.absenteeism_rate > 40) {
+                warnings.push("🚨 Niveau d’absence élevé (>40%) → facteur aggravant du risque d’échec scolaire.");
+            }else if (data.absenteeism_rate > 30) {
+                warnings.push("⚠️ Absentéisme critique (>30%) → présence en cours indispensable");
+            } else if (data.absenteeism_rate > 20) {
+                warnings.push("⚠️ Absentéisme préoccupant (20-30%) → situation à surveiller attentivement");
+            } else if (data.absenteeism_rate > 10) {
+                warnings.push("📌 Absences limitées mais non négligeables (10–20 %), pouvant évoluer si aucun suivi n’est effectué");
+            }
+            else if (data.absenteeism_rate > 5) {
+                warnings.push("🟢 Niveau d’absence faible (5–10 %) indiquant une bonne assiduitét");
+            }
+            // Analyse des heures d'étude
+            if (data.study_time_hours < 2) {
+                warnings.push("⏰ Temps d'étude insuffisant (<2h/jour) → révision urgente nécessaire");
+            } else if (data.study_time_hours < 3) {
+                 warnings.push("⏰ Temps d'étude modéré (2–3h/jour) → à améliorer pour plus de régularité");
+            } else {
+                warnings.push("🟢⏰ Bon temps d'étude (≥3h/jour) → bonne régularité");
+            }
+            
+            // Analyse de l'accès Internet
+            if (data.internet_access === "No") {
+                warnings.push("🌐 Absence d'accès Internet → difficultés potentielles pour les recherches");
+            }else if (data.internet_access === "Yes") {
+                warnings.push("🌐Accès Internet : ressource utile pour l’apprentissage, mais attention à ne pas dépendre des IA pour tout faire sans comprendre");
+            }
+            
+            // Analyse des activités extrascolaires
+            if (data.extra_activities === "No") {
+                warnings.push("🎭 Absence d'activités extrascolaires → équilibre vie étudiante important");
+            }
+            
+            // Construction du message selon la prédiction
+            if (prediction === 1) {
+                advice = `<div class="advice-message">
+                    <strong>⚠️ CONSEILS PERSONNALISÉS - Risque élevé :</strong>
+                    <ul>
+                        ${warnings.map(w => `<li>${w}</li>`).join('')}
+                        ${warnings.length === 0 ? '<li>📞 Consultez rapidement un conseiller pédagogique</li>' : ''}
+                        <li> Parlez-en à vos professeurs ou au service d'aide aux étudiants</li>
+                        <li>Établissez un planning de révision hebdomadaire</li>
+                        <li>Rejoignez un groupe d'étude ou un tutorat</li>
+                    </ul>
+                </div>`;
+            } else {
+                advice = `<div class="advice-message">
+                    <strong>✅ CONSEILS POUR MAINTENIR CE BON NIVEAU :</strong>
+                    <ul>
+                        <li> Continuez vos bonnes habitudes de travail</li>
+                        <li> Fixez-vous des objectifs semestriels</li>
+                        
+                    </ul>
+                    ${warnings.length > 0 ? `<p style="margin-top: 10px;"><strong>Points à améliorer :</strong></p>
+                    <ul>${warnings.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+                </div>`;
+            }
+            
+            return advice;
+        }
+
+        document.getElementById('predictionForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // Récupérer les valeurs
+            const age = parseInt(document.getElementById('age').value);
+            const average_grade = parseFloat(document.getElementById('average_grade').value);
+            const absenteeism_rate = parseFloat(document.getElementById('absenteeism_rate').value);
+            const study_time_hours = parseFloat(document.getElementById('study_time_hours').value);
+            
+            // Validation des intervalles
+            let errors = [];
+            if (age < 15 || age > 24) errors.push("L'âge doit être entre 15 et 24 ans");
+            if (average_grade < 5 || average_grade > 18) errors.push("La moyenne doit être entre 5 et 18");
+            if (absenteeism_rate < 0 || absenteeism_rate > 50) errors.push("L'absentéisme doit être entre 0% et 50%");
+            if (study_time_hours < 0 || study_time_hours > 5) errors.push("Les heures d'étude doivent être entre 0 et 5 heures");
+            
+            if (errors.length > 0) {
+                document.getElementById('result').innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Erreur de validation :</strong><br>
+                        ${errors.join('<br>')}
+                    </div>`;
+                return;
+            }
+            
+            const data = {
+                age: age,
+                gender: document.getElementById('gender').value,
+                average_grade: average_grade,
+                absenteeism_rate: absenteeism_rate,
+                internet_access: document.getElementById('internet_access').value,
+                study_time_hours: study_time_hours,
+                extra_activities: document.getElementById('extra_activities').value
+            };
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                
+                if (result.error) {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${result.error}</div>`;
+                } else {
+                    const riskClass = result.risk_level === 1 ? 'high-risk' : 'low-risk';
+                    const emoji = result.risk_level === 1 ? '⚠️' : '✅';
+                    
+                    // Extraire la confiance
+                    let confidenceValue = result.confidence;
+                    if (typeof confidenceValue === 'string') {
+                        confidenceValue = parseFloat(confidenceValue) / 100;
+                    }
+                    const confidencePercent = (confidenceValue * 100).toFixed(1);
+                    
+                    // Générer les conseils personnalisés
+                    const advice = getAdvice(data, result.risk_level, confidenceValue);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="result ${riskClass}">
+                            <h2>${emoji} ${result.prediction}</h2>
+                            <p><strong>Confiance:</strong> ${confidencePercent}%</p>
+                            ${advice}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<div class="result error">❌ Erreur de connexion. Vérifiez que l'application est lancée.</div>`;
+            }
+        };
+    </script>
+</body>
+</html>
